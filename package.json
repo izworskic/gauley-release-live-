@@ -1,0 +1,16 @@
+{
+  "name": "gauley-release-live",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "verify": "node tests/verify.mjs",
+    "simulate": "node scripts/simulate-release.mjs",
+    "evaluate:model": "node scripts/evaluate-model.mjs",
+    "build:deploy": "node scripts/build-deploy-bundle.mjs"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}
