@@ -21,12 +21,12 @@ const historyApi=stripImports(await read('api/history.js'));
 await fs.writeFile(path.join(dist,'api/live.js'),[geometry,schedule,engine,personas,sources,liveApi].join('\n\n'));
 await fs.writeFile(path.join(dist,'api/history.js'),[schedule,historyApi].join('\n\n'));
 await fs.copyFile(path.join(root,'api/health.js'),path.join(dist,'api/health.js'));
-const html=await read('index.html'); const css=await read('styles.css');
+const html=await read('index.html'); const css=await read('styles.css'); const personaCss=await read('persona.css');
 const app=stripImports(await read('app.js'))
  .replaceAll("getJSON('/api/live')","getJSON('./api/live')")
  .replaceAll("getJSON('/api/history')","getJSON('./api/history')");
 let inlined=html
- .replace('<link rel="stylesheet" href="/styles.css" />',`<style>${css}</style>`)
+ .replace('<link rel="stylesheet" href="/styles.css" />',`<style>${css}\n${personaCss}</style>`)
  .replace('<script type="module" src="/app.js"></script>',`<script type="module">${geometry}\n${app}</script>`)
  .replace('<meta property="og:type" content="website" />',`<meta property="og:type" content="website" />\n  <meta property="og:url" content="${canonical}" />\n  <link rel="canonical" href="${canonical}" />`);
 if(!inlined.includes(gaId)) inlined=inlined.replace('</head>',`${ga}\n</head>`);
