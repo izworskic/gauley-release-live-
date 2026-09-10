@@ -4,10 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Gauley Release Live | Chris Izworski</title>
-  <meta name="description" content="Follow the Gauley release from Summersville Dam: live status, river pulse timing, effective flow, weather, access and Gauley Fest context." />
+  <meta name="description" content="Follow the Gauley release from Summersville Dam with live release status, modeled water-arrival windows, river flow, weather and verified public-access context." />
   <meta name="theme-color" content="#edf2ea" />
   <meta property="og:title" content="Gauley Release Live" />
-  <meta property="og:description" content="Follow the water from Summersville Dam through the Gauley Gorge." />
+  <meta property="og:description" content="Is the Gauley release live, where is the water headed, and what matters for your river day?" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
@@ -19,18 +19,18 @@
     "@context":"https://schema.org",
     "@graph":[
       {"@type":"Person","@id":"https://chrisizworski.com/#person","name":"Chris Izworski","url":"https://chrisizworski.com/"},
-      {"@type":"WebApplication","name":"Gauley Release Live","applicationCategory":"TravelApplication","operatingSystem":"Web","description":"A live Gauley River release-status and release-wave tracking tool.","author":{"@id":"https://chrisizworski.com/#person"},"publisher":{"@id":"https://chrisizworski.com/#person"}}
+      {"@type":"WebApplication","name":"Gauley Release Live","applicationCategory":"TravelApplication","operatingSystem":"Web","description":"A live Gauley River release-status, planning and release-wave tracking tool for private paddlers, commercial rafting guests, spectators and photographers.","author":{"@id":"https://chrisizworski.com/#person"},"publisher":{"@id":"https://chrisizworski.com/#person"}}
     ]
   }
   </script>
 </head>
 <body>
-  <a class="skip" href="#main">Skip to current conditions</a>
+  <a class="skip" href="#main">Skip to current Gauley decision</a>
   <header class="site-header">
     <a class="brand" href="https://chrisizworski.com/" rel="author">Chris Izworski</a>
     <nav aria-label="Primary">
       <a href="#map-section">Follow the water</a>
-      <a href="#conditions">Conditions</a>
+      <a href="#conditions">River detail</a>
       <a href="#access">Access</a>
       <button id="sourcesButton" class="text-button" type="button">Sources</button>
     </nav>
@@ -42,15 +42,47 @@
       <div class="river-ribbon" aria-hidden="true"></div>
       <div class="hero-inner">
         <div class="eyebrow" id="modeLabel">GAULEY RELEASE LIVE</div>
-        <h1 id="heroTitle">Follow the water through the Gauley Gorge.</h1>
-        <p class="lede">Summersville Dam creates a moving river event. This tool tracks the release signal, estimates where that water is headed, and shows what is observed versus modeled.</p>
+        <h1 id="heroTitle">What does the Gauley mean for your day?</h1>
+        <p class="lede">One river, four different decisions. Choose why you are here and the same live Gauley data will be translated for that job.</p>
+
+        <div class="intent-picker" aria-label="Choose what you are here to do">
+          <span class="kicker">I’m here to…</span>
+          <div class="persona-tabs" role="group" aria-label="Choose your Gauley use">
+            <button class="persona-tab active" data-persona="paddler" type="button">Private paddle</button>
+            <button class="persona-tab" data-persona="raft" type="button">Raft trip</button>
+            <button class="persona-tab" data-persona="watch" type="button">Watch</button>
+            <button class="persona-tab" data-persona="photo" type="button">Photograph</button>
+          </div>
+        </div>
+
+        <article class="decision-card" aria-live="polite">
+          <div class="decision-topline">
+            <span class="eyebrow" id="personaLabel">PRIVATE PADDLER</span>
+            <strong class="decision-verdict" id="personaVerdict">LOADING LIVE SOURCES</strong>
+          </div>
+          <h2 id="personaHeadline">Building your Gauley read…</h2>
+          <p id="personaSummary">Checking the release schedule, live dam and gauge evidence, downstream flow, weather and access context.</p>
+          <div class="decision-facts">
+            <div><span id="personaFactLabel1">Release evidence</span><strong id="personaFact1">—</strong></div>
+            <div><span id="personaFactLabel2">River</span><strong id="personaFact2">—</strong></div>
+            <div><span id="personaFactLabel3">Next signal</span><strong id="personaFact3">—</strong></div>
+          </div>
+          <div class="decision-bottom">
+            <div class="next-check"><span>What to do next</span><strong id="personaNextCheck">Waiting for live data.</strong></div>
+            <button id="personaAction" class="button primary" type="button">Follow release pulse</button>
+          </div>
+          <p class="persona-caution" id="personaCaution">This tool describes environmental conditions and timing; it does not certify personal safety.</p>
+        </article>
+
+        <aside id="sinceLastPanel" class="since-last" hidden aria-live="polite">
+          <span class="kicker">Since your last check</span>
+          <strong id="sinceLastHeadline">No major change</strong>
+          <div id="sinceLastDetails"></div>
+        </aside>
 
         <div class="hero-grid">
           <article class="primary-status panel-light">
-            <div class="status-row">
-              <span class="status-dot" id="statusDot"></span>
-              <span class="kicker">Release status</span>
-            </div>
+            <div class="status-row"><span class="status-dot" id="statusDot"></span><span class="kicker">Observed release status</span></div>
             <div class="hero-status" id="releaseStatus">Loading live sources…</div>
             <p id="releaseDetail" class="muted">Checking USACE, USGS and NWS.</p>
             <div class="hero-actions">
@@ -58,50 +90,22 @@
               <button id="refreshButton" class="button secondary" type="button">Refresh live data</button>
             </div>
           </article>
-
-          <article class="stat-card panel-light">
-            <span class="kicker">Effective flow below Meadow</span>
-            <strong id="effectiveFlow">—</strong>
-            <span id="flowLabel">Waiting for live hydrology</span>
-          </article>
-
-          <article class="stat-card panel-light">
-            <span class="kicker">Release pulse</span>
-            <strong id="pulseNow">—</strong>
-            <span id="pulseEta">Arrival windows appear after release onset is observed.</span>
-          </article>
-
-          <article class="stat-card panel-light">
-            <span class="kicker">Model confidence</span>
-            <strong id="confidence">—</strong>
-            <span id="freshnessLine">Source freshness loading</span>
-          </article>
+          <article class="stat-card panel-light"><span class="kicker">Effective flow below Meadow</span><strong id="effectiveFlow">—</strong><span id="flowLabel">Waiting for live hydrology</span></article>
+          <article class="stat-card panel-light"><span class="kicker">Release pulse</span><strong id="pulseNow">—</strong><span id="pulseEta">Arrival windows appear after observed onset.</span></article>
+          <article class="stat-card panel-light"><span class="kicker">Data/model confidence</span><strong id="confidence">—</strong><span id="freshnessLine">Source freshness loading</span></article>
         </div>
-
-        <div class="disclaimer">Conditions index and modeled arrival windows describe the environment. They do not determine whether the river is safe for an individual paddler.</div>
+        <div class="disclaimer">Observed, estimated and modeled values remain separate. No score on this page determines whether the Gauley is safe for an individual.</div>
       </div>
     </section>
 
-    <section class="mode-strip" aria-label="Audience mode">
-      <div>
-        <span class="kicker">View</span>
-        <div class="segmented" role="group" aria-label="Choose river or visitor view">
-          <button class="seg active" data-mode="run" type="button">RUN</button>
-          <button class="seg" data-mode="visit" type="button">VISIT</button>
-        </div>
-      </div>
-      <div class="next-release">
-        <span class="kicker">Next scheduled release</span>
-        <strong id="nextRelease">—</strong>
-      </div>
+    <section class="planning-strip" aria-label="Next release planning">
+      <div><span class="kicker">Next scheduled release</span><strong id="nextRelease">—</strong></div>
+      <div><span class="kicker">Release-day morning outlook</span><strong id="releaseMorningWeather">Loading NWS forecast…</strong></div>
+      <div><span class="kicker">Timing certainty</span><strong id="planningConfidence">Schedule only until onset is observed</strong></div>
     </section>
 
     <section id="festPanel" class="fest-panel section-shell" hidden aria-live="polite">
-      <div>
-        <span class="eyebrow">GAULEY FEST LIVE</span>
-        <strong id="festDates">September 17–20, 2026</strong>
-        <p id="festNote">Festival context loads with live river conditions.</p>
-      </div>
+      <div><span class="eyebrow">GAULEY FEST LIVE</span><strong id="festDates">September 17–20, 2026</strong><p id="festNote">Festival context loads with live river conditions.</p></div>
       <a id="festLink" class="button secondary" href="https://www.americanwhitewater.org/nl/engage/events/gauley-fest/" target="_blank" rel="noopener">Official Gauley Fest information ↗</a>
     </section>
 
@@ -109,107 +113,48 @@
       <div class="section-heading">
         <div>
           <span class="eyebrow">FOLLOW THE WATER</span>
-          <h2>The river is the moving object.</h2>
-          <p id="mapIntro">When release onset is observed, the model turns that signal into downstream arrival windows with widening uncertainty. The map line is a modeled control-point corridor; the basemap shows the detailed river channel.</p>
+          <h2 id="mapHeading">See the release move downstream.</h2>
+          <p id="mapIntro">Private-paddler view shows rapids, access and the modeled release pulse. Arrival windows appear only after observed onset evidence.</p>
         </div>
-        <div class="legend" aria-label="Pulse status legend">
-          <span><i class="dot forecast"></i>Forecast</span>
-          <span><i class="dot approaching"></i>Approaching</span>
-          <span><i class="dot now"></i>Here now</span>
-          <span><i class="dot passed"></i>Passed</span>
-        </div>
+        <div class="legend" aria-label="Pulse status legend"><span><i class="dot forecast"></i>Forecast</span><span><i class="dot approaching"></i>Approaching</span><span><i class="dot now"></i>Here now</span><span><i class="dot passed"></i>Passed</span></div>
       </div>
-
       <div class="map-card">
         <div id="map" role="application" aria-label="Interactive Gauley River release map"></div>
         <aside id="mapDetail" class="map-detail" aria-live="polite">
-          <div class="map-detail-top">
-            <span class="kicker">Selected point</span>
-            <button id="closeDetail" class="icon-button" type="button" aria-label="Close detail">×</button>
-          </div>
-          <h3 id="detailName">Pillow Rock</h3>
-          <div id="detailClass" class="rapid-class"></div>
-          <div class="detail-grid">
-            <div><span>Pulse</span><strong id="detailState">Waiting</strong></div>
-            <div><span>Arrival</span><strong id="detailArrival">—</strong></div>
-            <div><span>Flow context</span><strong id="detailFlow">—</strong></div>
-            <div><span>Confidence</span><strong id="detailConfidence">—</strong></div>
-          </div>
-          <p id="detailNote">Select a rapid, access point or gauge.</p>
+          <div class="map-detail-top"><span class="kicker">Selected point</span><button id="closeDetail" class="icon-button" type="button" aria-label="Close detail">×</button></div>
+          <h3 id="detailName">Summersville Dam</h3><div id="detailClass" class="rapid-class"></div>
+          <div class="detail-grid"><div><span>Pulse</span><strong id="detailState">Waiting</strong></div><div><span>Arrival</span><strong id="detailArrival">—</strong></div><div><span>Flow context</span><strong id="detailFlow">—</strong></div><div><span>Confidence</span><strong id="detailConfidence">—</strong></div></div>
+          <p id="detailNote">Select a rapid, established access point or gauge.</p>
         </aside>
       </div>
-
-      <div class="time-control">
-        <div>
-          <span class="kicker">Pulse timeline</span>
-          <strong id="scrubTime">Live position</strong>
-        </div>
-        <input id="timeScrubber" type="range" min="0" max="360" step="5" value="0" disabled aria-label="Minutes after release onset" />
-        <button id="liveButton" type="button" class="button secondary" disabled>Return to live</button>
-      </div>
+      <div class="time-control"><div><span class="kicker">Pulse timeline</span><strong id="scrubTime">Live position</strong></div><input id="timeScrubber" type="range" min="0" max="360" step="5" value="0" disabled aria-label="Minutes after release onset" /><button id="liveButton" type="button" class="button secondary" disabled>Return to live</button></div>
     </section>
 
     <section id="conditions" class="section-shell cards-two">
       <article class="score-card">
-        <span class="eyebrow">GAULEY CONDITIONS</span>
+        <span class="eyebrow">ENVIRONMENTAL CONTEXT INDEX</span>
         <div class="score-line"><strong id="conditionScore">—</strong><span>/100</span></div>
         <h2 id="conditionLabel">Building the live picture</h2>
-        <p id="conditionWhy">Release integrity, effective-flow context, weather, source confidence and access signals contribute to this environmental index.</p>
-        <div class="mini-grid">
-          <div><span>Belva</span><strong id="belvaFlow">—</strong></div>
-          <div><span>Meadow</span><strong id="meadowFlow">—</strong></div>
-          <div><span>Tailwater stage</span><strong id="tailStage">—</strong></div>
-          <div><span>Rain</span><strong id="tailRain">—</strong></div>
-        </div>
+        <p id="conditionWhy">A compact summary of release evidence, effective-flow context, weather, source confidence and access signals. It is not a go/no-go or safety score.</p>
+        <div class="mini-grid"><div><span>Belva</span><strong id="belvaFlow">—</strong></div><div><span>Meadow</span><strong id="meadowFlow">—</strong></div><div><span>Tailwater stage</span><strong id="tailStage">—</strong></div><div><span>Rain</span><strong id="tailRain">—</strong></div></div>
       </article>
-
       <article class="weather-card">
-        <span class="eyebrow">RIVER WEATHER</span>
-        <div class="weather-main"><strong id="temperature">—</strong><span id="weatherText">Loading NWS forecast</span></div>
-        <div class="mini-grid">
-          <div><span>Precipitation</span><strong id="precipChance">—</strong></div>
-          <div><span>Wind</span><strong id="wind">—</strong></div>
-          <div><span>Warnings</span><strong id="warnings">—</strong></div>
-          <div><span>Updated</span><strong id="weatherUpdated">—</strong></div>
-        </div>
-        <div id="warningBox" class="warning-box" hidden></div>
+        <span class="eyebrow">RIVER WEATHER</span><div class="weather-main"><strong id="temperature">—</strong><span id="weatherText">Loading NWS forecast</span></div>
+        <div class="mini-grid"><div><span>Precipitation</span><strong id="precipChance">—</strong></div><div><span>Wind</span><strong id="wind">—</strong></div><div><span>Warnings</span><strong id="warnings">—</strong></div><div><span>Updated</span><strong id="weatherUpdated">—</strong></div></div><div id="warningBox" class="warning-box" hidden></div>
       </article>
     </section>
 
     <section class="section-shell comparison-section">
-      <div class="section-heading compact">
-        <div>
-          <span class="eyebrow">CONTEXT, NOT JUST CFS</span>
-          <h2>How does this compare with Gauley release days?</h2>
-        </div>
-      </div>
+      <div class="section-heading compact"><div><span class="eyebrow">CONTEXT, NOT JUST CFS</span><h2>How does this compare with Gauley release days?</h2></div></div>
       <div class="comparison-grid">
-        <article>
-          <span class="kicker">Historical release-day median</span>
-          <strong id="histMedian">Loading…</strong>
-          <p>Belva daily mean, filtered to the recurring fall release-day calendar pattern.</p>
-        </article>
-        <article>
-          <span class="kicker">Current modeled percentile</span>
-          <strong id="histPercentile">—</strong>
-          <p id="histNote">Appears when a usable effective-flow estimate and historical sample are both available.</p>
-        </article>
-        <article>
-          <span class="kicker">What changed?</span>
-          <strong id="changedHeadline">Waiting for trend</strong>
-          <p id="changedText">The app compares the last 24 hours of Belva flow and tailwater stage when available.</p>
-        </article>
+        <article><span class="kicker">Historical release-day median</span><strong id="histMedian">Loading…</strong><p>Belva daily mean, filtered to the recurring fall release-day calendar pattern.</p></article>
+        <article><span class="kicker">Current modeled percentile</span><strong id="histPercentile">—</strong><p id="histNote">Appears when a usable effective-flow estimate and historical sample are both available.</p></article>
+        <article><span class="kicker">24-hour river change</span><strong id="changedHeadline">Waiting for trend</strong><p id="changedText">Belva flow and tailwater stage are compared with the previous 24-hour observation window when available.</p></article>
       </div>
     </section>
 
     <section id="access" class="section-shell access-section">
-      <div class="section-heading compact">
-        <div>
-          <span class="eyebrow">2026 NPS SEASON NOTICE</span>
-          <h2>Access information that matters today.</h2>
-          <p>Visitor mode only surfaces established public-use information. It does not recommend informal roadside or backcountry viewing points.</p>
-        </div>
-      </div>
+      <div class="section-heading compact"><div><span class="eyebrow">VERIFIED PUBLIC-USE CONTEXT</span><h2>Access information that matters today.</h2><p id="spectatorNote">NPS identifies the Summersville Dam tailwaters as a place to watch rafters and boaters. Other access points are shown as river access, not automatically as spectator recommendations.</p></div></div>
       <div class="access-grid">
         <article><span class="access-icon">P</span><h3>Tailwaters</h3><p id="tailwatersNotice">Loading current-season notice…</p></article>
         <article><span class="access-icon">M</span><h3>Mason’s Branch</h3><p id="masonNotice">Loading current-season notice…</p></article>
@@ -219,31 +164,13 @@
     </section>
 
     <section class="section-shell data-section">
-      <div>
-        <span class="eyebrow">OBSERVED VS MODELED</span>
-        <h2>No fake precision.</h2>
-        <p>The tailwater gauge tells us when the river begins responding below the dam. USACE operations can confirm release-level outflow. Belva measures downstream discharge. The release-wave engine combines those signals only after onset evidence exists, then widens arrival uncertainty downstream.</p>
-      </div>
-      <div class="provenance-card">
-        <div><span>Observed</span><strong>USGS stage & discharge</strong></div>
-        <div><span>Observed</span><strong>USACE reservoir operations</strong></div>
-        <div><span>Forecast</span><strong>NWS weather</strong></div>
-        <div><span>Modeled</span><strong>Gauley release-wave arrivals</strong></div>
-      </div>
+      <div><span class="eyebrow">OBSERVED VS MODELED</span><h2>No fake precision.</h2><p>The tailwater gauge helps detect when the river begins responding below the dam. USACE operations can independently confirm release-level outflow. Belva measures downstream discharge. Rapid and public-access arrival windows remain modeled, with uncertainty widened downstream.</p></div>
+      <div class="provenance-card"><div><span>Observed</span><strong>USGS stage & discharge</strong></div><div><span>Observed</span><strong>USACE reservoir operations</strong></div><div><span>Forecast</span><strong>NWS hourly weather</strong></div><div><span>Modeled</span><strong>Gauley release-wave arrivals</strong></div></div>
     </section>
   </main>
 
-  <dialog id="sourcesDialog">
-    <form method="dialog" class="dialog-head"><strong>Data sources</strong><button class="icon-button" aria-label="Close sources">×</button></form>
-    <div id="sourcesList" class="sources-list"></div>
-    <p class="source-foot">Live values can be delayed or revised by the originating agencies. Modeled values are labeled as modeled or estimated.</p>
-  </dialog>
-
-  <footer>
-    <div><strong>Gauley Release Live</strong><span>Follow the water from Summersville Dam through the Gauley Gorge.</span></div>
-    <div>© 2026 <a href="https://chrisizworski.com/">Chris Izworski</a></div>
-  </footer>
-
+  <dialog id="sourcesDialog"><form method="dialog" class="dialog-head"><strong>Data sources</strong><button class="icon-button" aria-label="Close sources">×</button></form><div id="sourcesList" class="sources-list"></div><p class="source-foot">Live values can be delayed or revised by originating agencies. Modeled and estimated values are explicitly labeled.</p></dialog>
+  <footer><div><strong>Gauley Release Live</strong><span>One live river truth layer, translated for the reason you came.</span></div><div>© 2026 <a href="https://chrisizworski.com/">Chris Izworski</a></div></footer>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script type="module" src="/app.js"></script>
 </body>
