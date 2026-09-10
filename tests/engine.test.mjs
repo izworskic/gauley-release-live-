@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { freshness,detectReleaseOnset,recentObservations,classifyFlow,arrivalMinutes,meadowTravelMinutes,lagAlignedObservation,waveForecast,pointState,conditionsIndex,percentile } from '../lib/engine.js';
 import { isReleaseDate,isFestDate,releaseDates2026,nextRelease,modeledReleaseDatesForYear,localDateParts } from '../lib/schedule.js';
 import { WAYPOINTS } from '../lib/geometry.js';
+import { summarizeReleaseMorning,buildPersonaDecisions } from '../lib/personas.js';
 
 test('2026 authoritative release calendar contains 22 dates',()=>{assert.equal(releaseDates2026().length,22);assert.equal(isReleaseDate('2026-09-11'),true);assert.equal(isReleaseDate('2026-09-10'),false);assert.equal(isReleaseDate('2026-10-18'),true);assert.equal(nextRelease('2026-09-10'),'2026-09-11');assert.equal(nextRelease('2026-09-11'),'2026-09-12');assert.equal(nextRelease('2026-10-19'),null)});
 test('Gauley Fest window is separately modeled',()=>{assert.equal(isFestDate('2026-09-17'),true);assert.equal(isFestDate('2026-09-20'),true);assert.equal(isFestDate('2026-09-21'),false)});
@@ -20,3 +21,51 @@ test('Meadow contribution is applied only at and below its confluence',()=>{cons
 test('point state distinguishes forecast, approaching, here now and passed',()=>{const p={arrivalStart:'2026-09-11T12:00:00Z',arrivalEnd:'2026-09-11T12:30:00Z'};assert.equal(pointState('2026-09-11T10:00:00Z',p),'FORECAST');assert.equal(pointState('2026-09-11T11:45:00Z',p),'APPROACHING');assert.equal(pointState('2026-09-11T12:10:00Z',p),'HERE NOW');assert.equal(pointState('2026-09-11T13:00:00Z',p),'PASSED')});
 test('hard environmental/access concerns reduce conditions score',()=>{const base=conditionsIndex({releaseConfirmed:true,effectiveCfs:2800,weather:{precipProbability:10,windMph:5},dataConfidence:90}),warned=conditionsIndex({releaseConfirmed:true,effectiveCfs:2800,weather:{precipProbability:10,windMph:5},dataConfidence:90,activeWarnings:1,accessAlert:true});assert.ok(warned<base)});
 test('percentile communicates historical context',()=>{assert.equal(percentile(300,[100,200,300,400]),75);assert.equal(percentile(null,[1,2,3]),null)});
+
+test('release-morning forecast summarizes the planning window without inventing release timing',()=>{
+  const periods=[
+    {startTime:'2026-09-11T06:00:00-04:00',temperatureF:54,shortForecast:'Partly Cloudy',windMph:4,precipProbability:5},
+    {startTime:'2026-09-11T08:00:00-04:00',temperatureF:58,shortForecast:'Partly Cloudy',windMph:6,precipProbability:10},
+    {startTime:'2026-09-11T11:00:00-04:00',temperatureF:65,shortForecast:'Mostly Sunny',windMph:9,precipProbability:8},
+    {startTime:'2026-09-11T13:00:00-04:00',temperatureF:70,shortForecast:'Sunny',windMph:10,precipProbability:5}
+  ];
+  const m=summarizeReleaseMorning(periods,'2026-09-11');
+  assert.equal(m.temperatureLowF,54);assert.equal(m.temperatureHighF,65);assert.equal(m.precipMaxPct,10);assert.equal(m.windMaxMph,9);assert.equal(m.window,'6 AM–noon');
+});
+
+test('persona engine produces different decisions from one hydrology truth layer',()=>{
+  const input={
+    local:{date:'2026-09-10',hour:18,minute:30},
+    release:{scheduled:false,confirmed:false,status:'BETWEEN RELEASES',nextDate:'2026-09-11',standardReleaseCfs:2800},
+    river:{effectiveUpperCfs:null,effectivePostMeadowCfs:null},
+    weather:{periods:[{startTime:'2026-09-11T07:00:00-04:00',temperatureF:55,shortForecast:'Mostly Sunny',windMph:5,precipProbability:5}]},
+    wave:[],conditions:{activeWarnings:0},
+    seasonNotice:{tailwaters:'Tailwaters parking configuration changes during Gauley season.'}
+  };
+  const p=buildPersonaDecisions(input);
+  assert.match(p.paddler.headline,/Tomorrow is a release day/);
+  assert.match(p.raft.headline,/Weather and logistics/);
+  assert.equal(p.watch.facts[0].value,'Summersville Dam tailwaters');
+  assert.match(p.photo.summary,/Tailwaters/);
+  assert.match(p.planning.timingNote,/No release-start time is inferred/);
+  assert.doesNotMatch(JSON.stringify(p),/safe to paddle/i);
+});
+
+test('watch persona keeps modeled public-access timing after observed onset',()=>{
+  const input={
+    local:{date:'2026-09-11',hour:8,minute:30},
+    release:{scheduled:true,confirmed:true,status:'RELEASE UNDERWAY',nextDate:'2026-09-12',standardReleaseCfs:2800},
+    river:{effectiveUpperCfs:2800,effectivePostMeadowCfs:3150},weather:{periods:[]},
+    wave:[{id:'pillow',state:'HERE NOW'},{id:'mason',state:'FORECAST',arrivalStart:'2026-09-11T13:00:00Z',arrivalEnd:'2026-09-11T13:20:00Z'}],
+    conditions:{activeWarnings:0},seasonNotice:{tailwaters:'Tailwaters season parking notice.'}
+  };
+  const p=buildPersonaDecisions(input);
+  assert.match(p.watch.facts[2].value,/modeled arrival window available on map/);
+  assert.match(p.watch.headline,/tailwaters/i);
+  assert.match(p.paddler.facts[1].value,/2,800 CFS/);
+});
+
+test('raft guest persona defers trip clock and instructions to the outfitter',()=>{
+  const p=buildPersonaDecisions({local:{date:'2026-09-11'},release:{scheduled:true,confirmed:true,status:'RELEASE UNDERWAY',nextDate:'2026-09-12',standardReleaseCfs:2800},river:{effectiveUpperCfs:2800,effectivePostMeadowCfs:3000},weather:{periods:[]},wave:[],conditions:{activeWarnings:0},seasonNotice:{}});
+  assert.match(p.raft.headline,/outfitter/i);assert.match(p.raft.caution,/not commercial trip instructions/i);assert.doesNotMatch(p.raft.summary,/launch at|put in at/i);
+});
