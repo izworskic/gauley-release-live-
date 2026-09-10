@@ -2,12 +2,28 @@ import { getUSGS, getUSACE, getWeather, getNpsAlerts, latestUSGS, seriesUSGS } f
 import { localDateParts, isReleaseDate, isFestDate, nextRelease } from '../lib/schedule.js';
 import { detectReleaseOnset, recentObservations, freshness, classifyFlow, waveForecast, pointState, conditionsIndex, meadowTravelMinutes, lagAlignedObservation } from '../lib/engine.js';
 
+const SOURCE_BUDGET_MS = 6500;
+function withinBudget(promise, label, ms=SOURCE_BUDGET_MS) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} source budget exceeded ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control','public, s-maxage=180, stale-while-revalidate=900');
   const now = new Date();
   const local = localDateParts(now);
 
-  const settled = await Promise.allSettled([getUSGS(), getUSACE(), getWeather(), getNpsAlerts()]);
+  // The public site has a finite serverless request budget. A slow federal endpoint must
+  // degrade to partial, source-labeled data instead of timing out the entire Gauley tool.
+  const settled = await Promise.allSettled([
+    withinBudget(getUSGS(),'USGS'),
+    withinBudget(getUSACE(),'USACE'),
+    withinBudget(getWeather(),'NWS'),
+    withinBudget(getNpsAlerts(),'NPS')
+  ]);
   const usgs = settled[0].status === 'fulfilled' ? settled[0].value : null;
   const usace = settled[1].status === 'fulfilled' ? settled[1].value : null;
   const weather = settled[2].status === 'fulfilled' ? settled[2].value : null;
