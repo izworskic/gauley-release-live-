@@ -8,7 +8,9 @@
     "verify": "node tests/verify.mjs",
     "simulate": "node scripts/simulate-release.mjs",
     "evaluate:model": "node scripts/evaluate-model.mjs",
-    "build:deploy": "node scripts/build-deploy-bundle.mjs"
+    "build:deploy": "node scripts/build-deploy-bundle.mjs",
+    "verify:analytics": "node scripts/verify-analytics.mjs",
+    "vercel-build": "npm run build:deploy && npm run verify:analytics"
   },
   "engines": {
     "node": "22.x"
