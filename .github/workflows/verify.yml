@@ -22,5 +22,7 @@ jobs:
         run: npm run verify
       - name: Build deployment bundle
         run: npm run build:deploy
+      - name: Public route and analytics verification
+        run: npm run verify:analytics
       - name: Calibration evaluator
         run: npm run evaluate:model
