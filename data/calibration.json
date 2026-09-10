@@ -1,0 +1,9 @@
+{
+  "modelVersion": "grwe-0.1.0",
+  "status": "initial-uncalibrated",
+  "primaryMetric": "median_absolute_arrival_error_minutes",
+  "targetMedianErrorMinutes": 15,
+  "targetP90ErrorMinutes": 30,
+  "observedEvents": [],
+  "note": "Arrival windows are intentionally broad until live 2026 release observations provide event-specific calibration evidence."
+}
