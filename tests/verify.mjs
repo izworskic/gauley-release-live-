@@ -1,0 +1,37 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import { releaseDates2026 } from '../lib/schedule.js';
+import { WAYPOINTS } from '../lib/geometry.js';
+
+const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const js = fs.readFileSync(new URL('../app.js', import.meta.url), 'utf8');
+const live = fs.readFileSync(new URL('../api/live.js', import.meta.url), 'utf8');
+const sources = fs.readFileSync(new URL('../lib/sources.js', import.meta.url), 'utf8');
+const all = [html, js, live, sources].join('\n');
+
+const title = html.match(/<title>([^<]+)<\/title>/i)?.[1] || '';
+const description = html.match(/<meta\s+name="description"\s+content="([^"]+)"/i)?.[1] || '';
+assert.ok(title.length > 0 && title.length <= 60, `title length ${title.length}`);
+assert.ok(description.length > 0 && description.length <= 158, `description length ${description.length}`);
+assert.match(html, /https:\/\/chrisizworski\.com\/#person/);
+assert.match(html, /WebApplication/);
+assert.match(html, /FOLLOW THE WATER/i);
+assert.match(html, /Conditions index and modeled arrival windows describe the environment/i);
+assert.doesNotMatch(html, /Safe to paddle/i);
+assert.doesNotMatch(html, />\s*River is safe\s*</i);
+assert.doesNotMatch(all, /\bTODO\b/);
+assert.equal(releaseDates2026().length, 22);
+assert.ok(WAYPOINTS.length >= 9);
+assert.equal(new Set(WAYPOINTS.map(p => p.id)).size, WAYPOINTS.length);
+for (const p of WAYPOINTS) {
+  assert.ok(Number.isFinite(p.lat) && Number.isFinite(p.lon), `coords: ${p.id}`);
+  assert.ok(p.lat > 37 && p.lat < 39 && p.lon < -80 && p.lon > -82, `Gauley bounds: ${p.id}`);
+}
+assert.match(sources, /03189600/);
+assert.match(sources, /03192000/);
+assert.match(sources, /03190000/);
+assert.match(live, /meadowFlowCfs:meadowContribution/, 'time-aligned Meadow public field');
+assert.match(live, /Promise\.allSettled/);
+assert.match(live, /CONFIRMATION PENDING|RELEASE UNDERWAY/);
+assert.match(live, /estimated/i);
+console.log(`verify: PASS | title=${title.length} chars | description=${description.length} chars | waypoints=${WAYPOINTS.length} | releases=${releaseDates2026().length}`);
