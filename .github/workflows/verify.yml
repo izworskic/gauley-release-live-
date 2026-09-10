@@ -1,0 +1,26 @@
+name: Verify Gauley Release Live
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Engine tests
+        run: npm test
+      - name: Production verification
+        run: npm run verify
+      - name: Build deployment bundle
+        run: npm run build:deploy
+      - name: Calibration evaluator
+        run: npm run evaluate:model
