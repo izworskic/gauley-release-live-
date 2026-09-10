@@ -1,0 +1,15 @@
+{
+  "name": "2026 release-day simulation",
+  "timezone": "America/New_York",
+  "description": "Synthetic fixture for internal UI/engine testing. Never shown as live data.",
+  "onset": "2026-09-11T10:10:00.000Z",
+  "damCfs": 2800,
+  "meadowCfs": 320,
+  "checkpoints": [
+    {"localTime":"05:30","expected":"scheduled-not-started"},
+    {"localTime":"06:10","expected":"tailwater-onset"},
+    {"localTime":"07:30","expected":"upper-gauley-progressing"},
+    {"localTime":"09:30","expected":"upper-gauley-pulse"},
+    {"localTime":"12:00","expected":"downstream-progressing"}
+  ]
+}
