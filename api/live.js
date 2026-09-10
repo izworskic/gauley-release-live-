@@ -1,6 +1,7 @@
 import { getUSGS, getUSACE, getWeather, getNpsAlerts, latestUSGS, seriesUSGS } from '../lib/sources.js';
 import { localDateParts, isReleaseDate, isFestDate, nextRelease } from '../lib/schedule.js';
 import { detectReleaseOnset, recentObservations, freshness, classifyFlow, waveForecast, pointState, conditionsIndex, meadowTravelMinutes, lagAlignedObservation } from '../lib/engine.js';
+import { buildPersonaDecisions } from '../lib/personas.js';
 
 const SOURCE_BUDGET_MS = 6500;
 function withinBudget(promise, label, ms=SOURCE_BUDGET_MS) {
@@ -16,8 +17,6 @@ export default async function handler(req, res) {
   const now = new Date();
   const local = localDateParts(now);
 
-  // The public site has a finite serverless request budget. A slow federal endpoint must
-  // degrade to partial, source-labeled data instead of timing out the entire Gauley tool.
   const settled = await Promise.allSettled([
     withinBudget(getUSGS(),'USGS'),
     withinBudget(getUSACE(),'USACE'),
@@ -37,9 +36,6 @@ export default async function handler(req, res) {
   const meadowFlow = latestUSGS(parsed,'03190000','00060');
   const meadowSeries = seriesUSGS(parsed,'03190000','00060');
   const tailSeries = seriesUSGS(parsed,'03189600','00065');
-  // Release weekends contain consecutive days. Restrict onset detection so yesterday's
-  // morning rise cannot masquerade as today's pulse. Eighteen hours still preserves
-  // same-day onset evidence into the evening while excluding the prior release morning.
   const currentEventTailSeries = recentObservations(tailSeries, now, 18);
   const onset = detectReleaseOnset(currentEventTailSeries);
   const scheduled = isReleaseDate(local.date);
@@ -70,9 +66,6 @@ export default async function handler(req, res) {
   const meadowFresh = meadowFlow ? freshness(meadowFlow.time, now) : null;
   const meadowLagMinutes = meadowFlow ? meadowTravelMinutes(meadowFlow.value) : null;
   const meadowAligned = Number.isFinite(meadowLagMinutes) ? lagAlignedObservation(meadowSeries, now, meadowLagMinutes) : null;
-  // The Nallen gauge is ~11 river miles upstream of the mouth. Never add the simultaneous
-  // Nallen reading to dam flow: use a lag-aligned observation and reject it if the closest
-  // sample is too far from the modeled target time.
   const meadowUsable = meadowAligned && meadowFresh && !meadowFresh.stale && meadowAligned.alignmentDeltaMinutes <= 30;
   const meadowContribution = meadowUsable ? meadowAligned.value : null;
   const postMeadow = Number.isFinite(effectiveUpper) && Number.isFinite(meadowContribution) ? effectiveUpper + meadowContribution : effectiveUpper;
@@ -96,7 +89,17 @@ export default async function handler(req, res) {
   const firstTail = tailSeries[0];
   const changeTail = tailStage && firstTail ? tailStage.value - firstTail.value : null;
 
-  res.status(200).json({
+  const seasonNotice={
+    sourceDate:'2026-08-24',
+    tailwaters:'Tailwaters Campground closed September 11–28 to increase parking capacity and improve traffic flow.',
+    mason:"Mason’s Branch parking is limited and the access road closes when capacity is reached.",
+    privateProperty:'Gated roads, posted areas and private property are not public access points.',
+    source:'https://www.nps.gov/gari/planyourvisit/letter-to-gauley-boaters.htm',
+    spectatorSource:'https://www.nps.gov/gari/faqs.htm',
+    spectatorNote:'NPS identifies the Summersville Dam tailwaters as a place to watch rafters and boaters.'
+  };
+
+  const payload={
     generatedAt:now.toISOString(),
     local,
     mode:isFestDate(local.date) ? 'GAULEY FEST LIVE' : scheduled ? (confirmed?'RELEASE LIVE':'RELEASE FORECAST') : 'BETWEEN RELEASES',
@@ -140,20 +143,18 @@ export default async function handler(req, res) {
       source:'https://www.americanwhitewater.org/nl/engage/events/gauley-fest/',
       note:isFestDate(local.date) ? 'Gauley Fest is underway. River status and access information on this page remain sourced separately from official agencies.' : 'Gauley Fest 2026 is September 17–20.'
     },
-    seasonNotice:{
-      sourceDate:'2026-08-24',
-      tailwaters:'Tailwaters Campground closed September 11–28 to increase parking capacity and improve traffic flow.',
-      mason:"Mason’s Branch parking is limited and the access road closes when capacity is reached.",
-      privateProperty:'Gated roads, posted areas and private property are not public access points.',
-      source:'https://www.nps.gov/gari/planyourvisit/letter-to-gauley-boaters.htm'
-    },
+    seasonNotice,
     sources:{
       usgs:usgs?.url || 'https://waterdata.usgs.gov/',
       usace:usace?.url || 'https://water.usace.army.mil/overview/lrh/locations/summersville',
       nws:weather?.sourceUrl || 'https://api.weather.gov/',
       nps:'https://www.nps.gov/gari/planyourvisit/whitewater.htm',
+      npsSpectator:'https://www.nps.gov/gari/faqs.htm',
+      npsCommercial:'https://www.nps.gov/neri/planyourvisit/whitewater_commercial.htm',
       americanWhitewater:'https://www.americanwhitewater.org/content/River/view/river-detail/2378/main'
     },
     sourceErrors:settled.map((r,i)=>r.status==='rejected'?['USGS','USACE','NWS','NPS'][i]+': '+String(r.reason?.message||r.reason):null).filter(Boolean)
-  });
+  };
+  payload.personas=buildPersonaDecisions(payload);
+  res.status(200).json(payload);
 }
