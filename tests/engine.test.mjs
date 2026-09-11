@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { freshness,detectReleaseOnset,recentObservations,classifyFlow,arrivalMinutes,meadowTravelMinutes,lagAlignedObservation,waveForecast,pointState,conditionsIndex,percentile } from '../lib/engine.js';
-import { isReleaseDate,isFestDate,releaseDates2026,nextRelease,modeledReleaseDatesForYear,localDateParts } from '../lib/schedule.js';
+import { isReleaseDate,isFestDate,releaseDates2026,nextRelease,modeledReleaseDatesForYear,localDateParts,isIsoOnLocalDate } from '../lib/schedule.js';
 import { WAYPOINTS } from '../lib/geometry.js';
 import { summarizeReleaseMorning,buildPersonaDecisions } from '../lib/personas.js';
 
@@ -9,6 +9,7 @@ test('2026 authoritative release calendar contains 22 dates',()=>{assert.equal(r
 test('Gauley Fest window is separately modeled',()=>{assert.equal(isFestDate('2026-09-17'),true);assert.equal(isFestDate('2026-09-20'),true);assert.equal(isFestDate('2026-09-21'),false)});
 test('historical schedule approximation yields 22 event dates',()=>{for(const year of[2010,2019,2025]){const dates=modeledReleaseDatesForYear(year);assert.equal(dates.length,22);assert.equal(new Set(dates).size,22)}});
 test('local date conversion uses Gauley operational timezone',()=>{const p=localDateParts(new Date('2026-09-11T10:30:00Z'));assert.equal(p.date,'2026-09-11');assert.equal(p.hour,6);assert.equal(p.minute,30)});
+test('release onset evidence is confined to the current Gauley calendar day',()=>{assert.equal(isIsoOnLocalDate('2026-09-11T03:55:00Z','2026-09-10'),true);assert.equal(isIsoOnLocalDate('2026-09-11T03:55:00Z','2026-09-11'),false);assert.equal(isIsoOnLocalDate(null,'2026-09-11'),false)});
 test('freshness buckets distinguish current, delayed and stale data',()=>{const now=new Date('2026-09-11T12:00:00Z');assert.equal(freshness('2026-09-11T11:50:00Z',now).label,'CURRENT');assert.equal(freshness('2026-09-11T11:40:00Z',now).label,'RECENT');assert.equal(freshness('2026-09-11T11:15:00Z',now).label,'DELAYED');assert.equal(freshness('2026-09-11T10:00:00Z',now).label,'STALE');assert.equal(freshness(null,now).label,'UNKNOWN')});
 test('release onset detector recognizes a sustained tailwater rise',()=>{const start=Date.parse('2026-09-11T10:00:00Z'),values=[7.10,7.11,7.10,7.12,7.13,7.17,7.33,7.58,7.75,7.86],rows=values.map((value,i)=>({value,time:new Date(start+i*5*60000).toISOString()})),hit=detectReleaseOnset(rows);assert.ok(hit.onset);assert.ok(hit.confidence>=80);assert.match(hit.reason,/stage rise/i)});
 test('current event window excludes yesterday morning rise on consecutive release days',()=>{const now=new Date('2026-09-12T11:00:00Z'),rows=[{time:'2026-09-11T10:00:00Z',value:7.1},{time:'2026-09-11T10:15:00Z',value:7.2},{time:'2026-09-11T10:30:00Z',value:7.8},{time:'2026-09-11T10:45:00Z',value:8.1},{time:'2026-09-12T09:00:00Z',value:7.1},{time:'2026-09-12T10:00:00Z',value:7.1}];const recent=recentObservations(rows,now,18);assert.equal(recent.length,2);assert.equal(detectReleaseOnset(recent).onset,null)});
@@ -48,6 +49,9 @@ test('persona engine produces different decisions from one hydrology truth layer
   assert.equal(p.watch.facts[0].value,'Summersville Dam tailwaters');
   assert.match(p.photo.summary,/Tailwaters/);
   assert.match(p.planning.timingNote,/No release-start time is inferred/);
+  assert.equal(p.paddler.facts[1].value,'Not available');
+  assert.equal(p.paddler.facts[2].value,'Not available');
+  assert.doesNotMatch(JSON.stringify(p),/0 CFS/);
   assert.doesNotMatch(JSON.stringify(p),/safe to paddle/i);
 });
 

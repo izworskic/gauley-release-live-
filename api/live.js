@@ -1,5 +1,5 @@
 import { getUSGS, getUSACE, getWeather, getNpsAlerts, latestUSGS, seriesUSGS } from '../lib/sources.js';
-import { localDateParts, isReleaseDate, isFestDate, nextRelease } from '../lib/schedule.js';
+import { localDateParts, isIsoOnLocalDate, isReleaseDate, isFestDate, nextRelease } from '../lib/schedule.js';
 import { detectReleaseOnset, recentObservations, freshness, classifyFlow, waveForecast, pointState, conditionsIndex, meadowTravelMinutes, lagAlignedObservation } from '../lib/engine.js';
 import { buildPersonaDecisions } from '../lib/personas.js';
 
@@ -40,11 +40,12 @@ export default async function handler(req, res) {
   const onset = detectReleaseOnset(currentEventTailSeries);
   const scheduled = isReleaseDate(local.date);
 
-  const usaceObservedFreshness = usace?.outflowObservedAt ? freshness(usace.outflowObservedAt, now) : null;
-  const usaceFresh = Number.isFinite(usace?.outflowCfs) && usaceObservedFreshness && !usaceObservedFreshness.stale;
-  const usaceUnstamped = Number.isFinite(usace?.outflowCfs) && !usace?.outflowObservedAt;
+  const hasUsaceOutflow = Number.isFinite(usace?.outflowCfs);
+  const usaceObservedFreshness = hasUsaceOutflow && usace?.outflowObservedAt ? freshness(usace.outflowObservedAt, now) : null;
+  const usaceFresh = hasUsaceOutflow && usaceObservedFreshness && !usaceObservedFreshness.stale;
+  const usaceUnstamped = hasUsaceOutflow && !usace?.outflowObservedAt;
   const actualReleaseSignal = usaceFresh && usace.outflowCfs >= 2000;
-  const stageReleaseSignal = !!onset.onset;
+  const stageReleaseSignal = isIsoOnLocalDate(onset.onset, local.date);
   const confirmed = actualReleaseSignal || (scheduled && stageReleaseSignal);
 
   let status = 'BETWEEN RELEASES';
@@ -78,7 +79,7 @@ export default async function handler(req, res) {
   if (weather) confidence += 5;
   confidence = Math.min(95, confidence);
 
-  const wave = onset.onset ? waveForecast(onset.onset, effectiveUpper || 2800, meadowUsable ? meadowContribution : 0).map(p=>({ ...p, state:pointState(now.toISOString(),p) })) : [];
+  const wave = confirmed && stageReleaseSignal ? waveForecast(onset.onset, effectiveUpper || 2800, meadowUsable ? meadowContribution : 0).map(p=>({ ...p, state:pointState(now.toISOString(),p) })) : [];
   const nextWave = wave.find(p => ['FORECAST','APPROACHING','HERE NOW'].includes(p.state) && p.id !== 'dam') || null;
   const activeWarnings = weather?.alerts?.filter(a=>/warning/i.test(a.event||'')).length || 0;
   const accessAlert = (nps?.alerts||[]).some(a=>/closure|closed|access/i.test(`${a.title} ${a.category}`));
@@ -130,7 +131,7 @@ export default async function handler(req, res) {
       usace:usaceObservedFreshness
     },
     observations:{
-      usaceOutflow:Number.isFinite(usace?.outflowCfs)?{value:usace.outflowCfs,time:usace.outflowObservedAt,method:usace.method,series:usace.outflowSeries||null,usableForConfirmation:usaceFresh,unstamped:usaceUnstamped}:null,
+      usaceOutflow:hasUsaceOutflow?{value:usace.outflowCfs,time:usace.outflowObservedAt,method:usace.method,series:usace.outflowSeries||null,usableForConfirmation:usaceFresh,unstamped:usaceUnstamped}:null,
       tailwaterStage:tailStage,
       belvaFlow,
       belvaStage,
