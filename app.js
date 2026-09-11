@@ -16,7 +16,12 @@ try {
   priorVisit = JSON.parse(localStorage.getItem('gauleyLastVisit') || 'null');
 } catch {}
 
-function fmtNum(v, suffix='') { return Number.isFinite(Number(v)) ? `${Math.round(Number(v)).toLocaleString()}${suffix}` : '—'; }
+function finiteNumber(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const value = Number(v);
+  return Number.isFinite(value) ? value : null;
+}
+function fmtNum(v, suffix='') { const value=finiteNumber(v); return value===null ? '—' : `${Math.round(value).toLocaleString()}${suffix}`; }
 function fmtTime(iso) {
   if (!iso) return '—';
   return new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit'}).format(new Date(iso));
@@ -192,11 +197,11 @@ function renderSinceLast(data){
     if(age>=5*60000&&age<=7*86400000){
       const changes=[];
       if(priorVisit.status&&priorVisit.status!==data.release.status)changes.push(`${priorVisit.status} → ${data.release.status}`);
-      const f0=Number(priorVisit.flow),f1=Number(data.river.effectivePostMeadowCfs);
-      if(Number.isFinite(f0)&&Number.isFinite(f1)&&Math.abs(f1-f0)>=50)changes.push(`Effective flow ${f1-f0>=0?'+':''}${Math.round(f1-f0).toLocaleString()} CFS`);
+      const f0=finiteNumber(priorVisit.flow),f1=finiteNumber(data.river.effectivePostMeadowCfs);
+      if(f0!==null&&f1!==null&&Math.abs(f1-f0)>=50)changes.push(`Effective flow ${f1-f0>=0?'+':''}${Math.round(f1-f0).toLocaleString()} CFS`);
       const pulse=data.nextWave?.name||null;if(priorVisit.pulse&&pulse&&priorVisit.pulse!==pulse)changes.push(`Pulse advanced: ${priorVisit.pulse} → ${pulse}`);
       if(Number(priorVisit.warnings)!==Number(data.conditions.activeWarnings))changes.push(`NWS warnings ${priorVisit.warnings||0} → ${data.conditions.activeWarnings||0}`);
-      const c0=Number(priorVisit.confidence),c1=Number(data.conditions.confidence);if(Number.isFinite(c0)&&Number.isFinite(c1)&&Math.abs(c1-c0)>=5)changes.push(`Confidence ${c1-c0>=0?'+':''}${Math.round(c1-c0)} points`);
+      const c0=finiteNumber(priorVisit.confidence),c1=finiteNumber(data.conditions.confidence);if(c0!==null&&c1!==null&&Math.abs(c1-c0)>=5)changes.push(`Confidence ${c1-c0>=0?'+':''}${Math.round(c1-c0)} points`);
       $('sinceLastPanel').hidden=false;
       $('sinceLastHeadline').textContent=changes.length?`Changed since ${ageText(age)}`:`No major change since ${ageText(age)}`;
       $('sinceLastDetails').replaceChildren(...(changes.length?changes:['Release status, material flow, pulse position and warnings are effectively unchanged.']).map(t=>{const s=document.createElement('span');s.textContent=t;return s;}));
@@ -247,7 +252,7 @@ function render(data) {
   }
   $('sourcesList').replaceChildren(...Object.entries(data.sources).map(([k,v])=>{const a=document.createElement('a');a.href=v;a.target='_blank';a.rel='noopener';const n=document.createElement('span');n.textContent=k.toUpperCase();const o=document.createElement('span');o.textContent='Open ↗';a.append(n,o);return a;}));
 
-  const onset=data.release?.onset?.onset;
+  const onset=data.wave?.length ? data.release?.onset?.onset : null;
   $('timeScrubber').disabled=!onset;$('liveButton').disabled=!onset;
   if(onset){const mins=Math.max(0,Math.min(360,Math.round((Date.now()-new Date(onset).getTime())/60000/5)*5));if(scrubMinutes===null)$('timeScrubber').value=mins;}
   renderPersona();renderPlanning();setMapPersona(currentPersona);updatePulseMarker();
@@ -258,7 +263,7 @@ function render(data) {
 
 function renderHistory(){
   $('histMedian').textContent=Number.isFinite(history?.median)?`${history.median.toLocaleString()} CFS`:'Unavailable';
-  const flow=Number(live?.river?.effectivePostMeadowCfs);
+  const flow=finiteNumber(live?.river?.effectivePostMeadowCfs);
   const pct=pctFor(flow,history?.sample);
   $('histPercentile').textContent=Number.isFinite(pct)?`${pct}th percentile`:'—';
   $('histNote').textContent=Number.isFinite(pct)?`Modeled effective flow compared with ${history.sampleCount} Belva daily means on modeled release-calendar dates from 2010–2025.`:'Current effective flow is not available for a percentile comparison.';

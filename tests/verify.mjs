@@ -50,5 +50,8 @@ assert.match(js, /gauleyLastVisit/);
 assert.match(js, /gauley_persona_select/);
 assert.match(js, /markerAllowed/);
 assert.match(live, /CONFIRMATION PENDING|RELEASE UNDERWAY/);
+assert.match(live, /confirmed && stageReleaseSignal \? waveForecast/);
+assert.match(live, /isIsoOnLocalDate\(onset\.onset, local\.date\)/);
+assert.doesNotMatch(live, /onset\.onset \? waveForecast/);
 assert.match(live, /estimated/i);
 console.log(`verify: PASS | title=${title.length} chars | description=${description.length} chars | waypoints=${WAYPOINTS.length} | releases=${releaseDates2026().length}`);
