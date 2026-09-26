@@ -4,6 +4,7 @@ import { detectReleaseOnset, recentObservations, freshness, classifyFlow, waveFo
 import { buildPersonaDecisions } from '../lib/personas.js';
 
 const SOURCE_BUDGET_MS = 6500;
+const USACE_SOURCE_BUDGET_MS = 8000;
 function withinBudget(promise, label, ms=SOURCE_BUDGET_MS) {
   let timer;
   const timeout = new Promise((_, reject) => {
@@ -19,7 +20,7 @@ export default async function handler(req, res) {
 
   const settled = await Promise.allSettled([
     withinBudget(getUSGS(),'USGS'),
-    withinBudget(getUSACE(),'USACE'),
+    withinBudget(getUSACE(),'USACE',USACE_SOURCE_BUDGET_MS),
     withinBudget(getWeather(),'NWS'),
     withinBudget(getNpsAlerts(),'NPS')
   ]);
